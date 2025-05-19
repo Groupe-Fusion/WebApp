@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import * as Select from "@radix-ui/react-select";
-import * as Slider from "@radix-ui/react-slider";
 import * as Toast from "@radix-ui/react-toast";
 import { CheckIcon, ChevronDownIcon, Cross2Icon } from "@radix-ui/react-icons";
 import { FormFieldset } from "../../components/form/FormFieldSet";
@@ -19,13 +18,6 @@ type FormData = {
   weight: string;
   dimensions?: string;
   fragile: boolean;
-  deliverNow: boolean;
-  deliveryDate?: string;
-  deliveryTime?: string;
-  insurance: boolean;
-  signature: boolean;
-  priceMin: number;
-  priceMax: number;
   specialInstructions?: string;
 };
 
@@ -39,33 +31,13 @@ export function LivraisonExpressForm() {
     register,
     handleSubmit,
     control,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
       packageType: "small",
-      deliverNow: false,
       fragile: false,
-      insurance: false,
-      signature: false,
-      priceMin: 5,
-      priceMax: 50,
     },
   });
-
-  // Observer la valeur de deliverNow pour le rendu conditionnel
-  const deliverNow = watch("deliverNow");
-
-  // Observer les valeurs min et max pour la synchronisation avec le slider
-  const priceMin = watch("priceMin");
-  const priceMax = watch("priceMax");
-
-  // Fonction pour gérer le changement sur le slider
-  const handleSliderChange = (values: number[]) => {
-    setValue("priceMin", values[0]);
-    setValue("priceMax", values[1]);
-  };
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true);
@@ -367,203 +339,6 @@ export function LivraisonExpressForm() {
               </div>
             </FormFieldset>
 
-            {/* Options de livraison */}
-            <FormFieldset title="Options de livraison">
-              {/* Option "Maintenant ?" */}
-              <div className="flex items-center md:col-span-2">
-                <Controller
-                  name="deliverNow"
-                  control={control}
-                  render={({ field }) => (
-                    <Checkbox.Root
-                      className="h-4 w-4 rounded border border-gray-300 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-white"
-                      id="deliverNow"
-                      checked={field.value}
-                      onCheckedChange={(checked) => field.onChange(checked)}
-                    >
-                      <Checkbox.Indicator>
-                        <CheckIcon className="text-blue-600 h-3 w-3" />
-                      </Checkbox.Indicator>
-                    </Checkbox.Root>
-                  )}
-                />
-                <label
-                  htmlFor="deliverNow"
-                  className="ml-2 block text-sm font-semibold"
-                >
-                  Livraison immédiate
-                </label>
-              </div>
-
-              {/* Date souhaitée - visible uniquement si "Maintenant ?" n'est pas coché */}
-              {!deliverNow && (
-                <div className="grid">
-                  <label
-                    className="text-sm font-semibold mb-1"
-                    htmlFor="deliveryDate"
-                  >
-                    Date souhaitée
-                  </label>
-                  <input
-                    id="deliveryDate"
-                    type="date"
-                    min={new Date().toISOString().split("T")[0]}
-                    className={`rounded-md border ${
-                      errors.deliveryDate ? "border-red-500" : "border-gray-300"
-                    } px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    {...register("deliveryDate", {
-                      required: !deliverNow
-                        ? "Veuillez choisir une date de livraison"
-                        : false,
-                    })}
-                  />
-                  {errors.deliveryDate && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.deliveryDate.message}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Créneau horaire - visible uniquement si "Maintenant ?" n'est pas coché */}
-              {!deliverNow && (
-                <div className="grid">
-                  <label
-                    className="text-sm font-semibold mb-1"
-                    htmlFor="deliveryTime"
-                  >
-                    Créneau horaire
-                  </label>
-                  <Controller
-                    name="deliveryTime"
-                    control={control}
-                    defaultValue="no-preference"
-                    render={({ field }) => (
-                      <Select.Root
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <Select.Trigger
-                          className="inline-flex items-center justify-between rounded-md px-3 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
-                          aria-label="Créneau horaire"
-                        >
-                          <Select.Value />
-                          <Select.Icon>
-                            <ChevronDownIcon />
-                          </Select.Icon>
-                        </Select.Trigger>
-                        <Select.Portal>
-                          <Select.Content
-                            className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50"
-                            position="popper"
-                          >
-                            <Select.Viewport className="p-1">
-                              <Select.Item
-                                value="no-preference"
-                                className="text-sm text-gray-800 rounded flex items-center h-8 px-2 relative select-none data-[highlighted]:bg-blue-100 data-[highlighted]:outline-none"
-                              >
-                                <Select.ItemText>
-                                  Pas de préférence
-                                </Select.ItemText>
-                                <Select.ItemIndicator className="absolute right-2">
-                                  <CheckIcon />
-                                </Select.ItemIndicator>
-                              </Select.Item>
-                              <Select.Item
-                                value="morning"
-                                className="text-sm text-gray-800 rounded flex items-center h-8 px-2 relative select-none data-[highlighted]:bg-blue-100 data-[highlighted]:outline-none"
-                              >
-                                <Select.ItemText>
-                                  Matin (8h-12h)
-                                </Select.ItemText>
-                                <Select.ItemIndicator className="absolute right-2">
-                                  <CheckIcon />
-                                </Select.ItemIndicator>
-                              </Select.Item>
-                              <Select.Item
-                                value="afternoon"
-                                className="text-sm text-gray-800 rounded flex items-center h-8 px-2 relative select-none data-[highlighted]:bg-blue-100 data-[highlighted]:outline-none"
-                              >
-                                <Select.ItemText>
-                                  Après-midi (12h-17h)
-                                </Select.ItemText>
-                                <Select.ItemIndicator className="absolute right-2">
-                                  <CheckIcon />
-                                </Select.ItemIndicator>
-                              </Select.Item>
-                              <Select.Item
-                                value="evening"
-                                className="text-sm text-gray-800 rounded flex items-center h-8 px-2 relative select-none data-[highlighted]:bg-blue-100 data-[highlighted]:outline-none"
-                              >
-                                <Select.ItemText>
-                                  Soirée (17h-20h)
-                                </Select.ItemText>
-                                <Select.ItemIndicator className="absolute right-2">
-                                  <CheckIcon />
-                                </Select.ItemIndicator>
-                              </Select.Item>
-                            </Select.Viewport>
-                          </Select.Content>
-                        </Select.Portal>
-                      </Select.Root>
-                    )}
-                  />
-                </div>
-              )}
-
-              {/* Options supplémentaires - toujours visibles */}
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <Controller
-                    name="insurance"
-                    control={control}
-                    render={({ field }) => (
-                      <Checkbox.Root
-                        className="h-4 w-4 rounded border border-gray-300 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-white"
-                        id="insurance"
-                        checked={field.value}
-                        onCheckedChange={(checked) => field.onChange(checked)}
-                      >
-                        <Checkbox.Indicator>
-                          <CheckIcon className="text-blue-600 h-3 w-3" />
-                        </Checkbox.Indicator>
-                      </Checkbox.Root>
-                    )}
-                  />
-                  <label
-                    htmlFor="insurance"
-                    className="ml-2 block text-sm font-semibold"
-                  >
-                    Assurance colis (+5€)
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <Controller
-                    name="signature"
-                    control={control}
-                    render={({ field }) => (
-                      <Checkbox.Root
-                        className="h-4 w-4 rounded border border-gray-300 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-white"
-                        id="signature"
-                        checked={field.value}
-                        onCheckedChange={(checked) => field.onChange(checked)}
-                      >
-                        <Checkbox.Indicator>
-                          <CheckIcon className="text-blue-600 h-3 w-3" />
-                        </Checkbox.Indicator>
-                      </Checkbox.Root>
-                    )}
-                  />
-                  <label
-                    htmlFor="signature"
-                    className="ml-2 block text-sm font-semibold"
-                  >
-                    Signature à la livraison (+2€)
-                  </label>
-                </div>
-              </div>
-            </FormFieldset>
-
             {/* Instructions spéciales */}
             <FormFieldset title="Instructions spéciales">
               <div className="grid md:col-span-2">
@@ -580,130 +355,6 @@ export function LivraisonExpressForm() {
                   placeholder="Informations supplémentaires pour le livreur..."
                   {...register("specialInstructions")}
                 />
-              </div>
-            </FormFieldset>
-
-            {/* Prix */}
-            <FormFieldset title="Budget">
-              <div className="grid md:col-span-2 mb-6">
-                <div className="flex items-center space-x-4 mb-6">
-                  <div className="w-1/2">
-                    <label
-                      className="text-xs text-gray-500 mb-1 block"
-                      htmlFor="priceMin"
-                    >
-                      Prix minimum (€)
-                    </label>
-                    <input
-                      id="priceMin"
-                      type="number"
-                      className={`rounded-md border ${
-                        errors.priceMin ? "border-red-500" : "border-gray-300"
-                      } px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full`}
-                      {...register("priceMin", {
-                        required: "Prix minimum requis",
-                        min: {
-                          value: 0,
-                          message: "Le prix minimum doit être positif",
-                        },
-                        max: {
-                          value: 1000,
-                          message: "Le prix maximum est de 1000€",
-                        },
-                        valueAsNumber: true,
-                        validate: {
-                          lessThanMax: (v) =>
-                            v <= priceMax ||
-                            "Le prix minimum doit être inférieur au prix maximum",
-                        },
-                      })}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        setValue("priceMin", isNaN(value) ? 0 : value);
-                      }}
-                    />
-                    {errors.priceMin && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {errors.priceMin.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="w-1/2">
-                    <label
-                      className="text-xs text-gray-500 mb-1 block"
-                      htmlFor="priceMax"
-                    >
-                      Prix maximum (€)
-                    </label>
-                    <input
-                      id="priceMax"
-                      type="number"
-                      className={`rounded-md border ${
-                        errors.priceMax ? "border-red-500" : "border-gray-300"
-                      } px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full`}
-                      {...register("priceMax", {
-                        required: "Prix maximum requis",
-                        min: {
-                          value: 0,
-                          message: "Le prix maximum doit être positif",
-                        },
-                        max: {
-                          value: 1000,
-                          message: "Le prix maximum est de 1000€",
-                        },
-                        valueAsNumber: true,
-                        validate: {
-                          greaterThanMin: (v) =>
-                            v >= priceMin ||
-                            "Le prix maximum doit être supérieur au prix minimum",
-                        },
-                      })}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        setValue("priceMax", isNaN(value) ? 0 : value);
-                      }}
-                    />
-                    {errors.priceMax && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {errors.priceMax.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Slider */}
-                <div className="px-2 py-4">
-                  <Slider.Root
-                    className="relative flex items-center select-none touch-none w-full h-5"
-                    value={[priceMin, priceMax]}
-                    min={0}
-                    max={1000}
-                    step={5}
-                    minStepsBetweenThumbs={1}
-                    onValueChange={handleSliderChange}
-                  >
-                    <Slider.Track className="bg-gray-200 relative grow rounded-full h-2">
-                      <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
-                    </Slider.Track>
-                    <Slider.Thumb
-                      className="block w-5 h-5 bg-white rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                      aria-label="Prix minimum"
-                    />
-                    <Slider.Thumb
-                      className="block w-5 h-5 bg-white rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                      aria-label="Prix maximum"
-                    />
-                  </Slider.Root>
-
-                  <div className="flex justify-between mt-2 text-xs text-gray-500">
-                    <span>0€</span>
-                    <span>250€</span>
-                    <span>500€</span>
-                    <span>750€</span>
-                    <span>1000€</span>
-                  </div>
-                </div>
               </div>
             </FormFieldset>
 
