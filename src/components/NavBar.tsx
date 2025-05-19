@@ -75,7 +75,7 @@ export function Navbar() {
             <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
             <Dialog.Content className="fixed right-0 top-0 h-full w-[375px] bg-white p-4 shadow-lg z-50 flex flex-col">
               <div className="flex justify-between items-center mb-4">
-                <Dialog.Title className="text-xl font-bold text-primary font-century">Index DM Durable</Dialog.Title>
+                <Dialog.Title className="text-xl font-bold text-primary font-century">QuickServe</Dialog.Title>
                 <Dialog.Close asChild>
                   <button className="p-2 rounded-full hover:bg-gray-100" aria-label="Close menu">
                     <X className="h-5 w-5" />

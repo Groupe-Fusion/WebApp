@@ -6,10 +6,11 @@ import {
   import { JSX } from "react/jsx-runtime";
 import LoadingPage from "../pages/LoadingPage";
 import { QuickServeRoute, QuickServeRoutes, QuickServeRouteItem } from "../shared/interfaces/routes";
-  import { AppRoutes } from "./AppRoutes";
+  import { AppRoutes, AuthRoutes} from "./AppRoutes";
   
   const AppRouterRoutes = [
     transformRoutes(AppRoutes),
+    transformRoutes(AuthRoutes),
   ];
   
   const router = createBrowserRouter(AppRouterRoutes);
