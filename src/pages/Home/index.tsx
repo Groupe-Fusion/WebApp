@@ -13,7 +13,7 @@ export default function Home() {
       subtitle: "12 services",
       icon: "/package-3d-1.png",
       alt: "Package",
-      path: "/delivery",
+      path: "/livraison-express",
     },
     {
       title: "Déménagement",
