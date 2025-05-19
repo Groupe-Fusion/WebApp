@@ -43,15 +43,15 @@ interface DeliveryProvider {
 type SortType = "price" | "delay";
 
 export default function LivraisonExpressResultats() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [allProviders, setAllProviders] = useState<DeliveryProvider[]>([]);
-  const [filteredProviders, setFilteredProviders] = useState<
-    DeliveryProvider[]
-  >([]);
-  const formData = location.state?.formData as FormData | undefined;
-  const reservationId = location.state?.reservationId as string | undefined;
+	const location = useLocation();
+	const navigate = useNavigate();
+	const [loading, setLoading] = useState(true);
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [allProviders, setAllProviders] = useState<DeliveryProvider[]>([]);
+	const [filteredProviders, setFilteredProviders] = useState<DeliveryProvider[]>([]);
+	const formData = location.state?.formData as FormData | undefined;
+	const reservationId = location.state?.reservationId as string | undefined;
 
   // Fonction pour sélectionner un prestataire et rediriger vers le paiement
   const handleSelectProvider = async (provider: DeliveryProvider) => {
