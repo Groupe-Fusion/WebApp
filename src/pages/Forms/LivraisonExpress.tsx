@@ -67,7 +67,7 @@ export function LivraisonExpressForm() {
   return (
     <div className="w-full max-w-[1200px] relative min-h-screen">
       <Toast.Provider swipeDirection="right">
-        <div className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="mt-8 bg-white p-6 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-8" onSubmit={handleSubmit(onSubmit)}>
             {/* Section Destinataire */}
             <FormFieldset title="Informations destinataire">
@@ -358,7 +358,6 @@ export function LivraisonExpressForm() {
               </div>
             </FormFieldset>
 
-            {/* Boutons d'action */}
             <div className="flex justify-end space-x-3">
               <button
                 type="button"
