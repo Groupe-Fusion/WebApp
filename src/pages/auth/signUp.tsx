@@ -45,7 +45,7 @@ const onSubmit = async (data: SignUpFormData) => {
     };
 
     // Appel à l'API d'inscription
-    const response = await fetch('http://57.128.212:8081/api/User', {
+    const response = await fetch('http://57.128.212.12:8081/api/User', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
