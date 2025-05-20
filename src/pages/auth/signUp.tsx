@@ -24,6 +24,7 @@ export default function SignUp() {
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<SignUpFormData>();
@@ -284,6 +285,9 @@ const onSubmit = async (data: SignUpFormData) => {
                       required:
                         "Vous devez accepter les conditions d'utilisation",
                     })}
+                    onCheckedChange={(value) => {
+                      setValue("acceptConditions", value as boolean);
+                    }}
                   >
                     <Checkbox.Indicator>
                       <CheckIcon className="h-3 w-3 text-blue-600" />
