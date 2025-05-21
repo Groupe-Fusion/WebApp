@@ -32,56 +32,74 @@ export default function SignUp() {
   // Pour permettre de comparer le mot de passe et sa confirmation
   const password = watch("password");
 
-const onSubmit = async (data: SignUpFormData) => {
-  setSubmitting(true);
-  try {
-    // Création de l'objet à envoyer à l'API
-    const userData = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      phoneNumber: data.phoneNumber,
-      password: data.password,
-      acceptConditions: data.acceptConditions,
-    };
+  const onSubmit = async (data: SignUpFormData) => {
+    setSubmitting(true);
+    try {
+      // Création de l'objet à envoyer à l'API
+      const userData = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        password: data.password,
+        acceptConditions: data.acceptConditions,
+      };
 
-    // Appel à l'API d'inscription
-    const response = await fetch('http://57.128.212.12:8081/api/User', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
+      // Appel à l'API d'inscription
+      const response = await fetch("http://57.128.212.12:8081/api/User", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
 
-    // Vérification de la réponse
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Erreur lors de l\'inscription');
+      // Vérification de la réponse
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Erreur lors de l'inscription");
+      }
+
+      // Récupération des données de réponse
+      const responseData = await response.json();
+      console.log("Inscription réussie:", responseData);
+
+      // Stockage des données utilisateur dans le localStorage
+      // On crée un objet user pour le localStorage sans inclure le mot de passe en clair
+      const userToStore = {
+        ...responseData,
+        isAuthenticated: true,
+      };
+
+      // On supprime le mot de passe en clair pour la sécurité
+      delete userToStore.password;
+
+      // Stockage dans le localStorage
+      localStorage.setItem("user", JSON.stringify(userToStore));
+      localStorage.setItem(
+        "authToken",
+        "simulated-jwt-token-" + responseData.id
+      );
+
+      // Redirection après inscription réussie
+      navigate("/auth/signin", {
+        state: {
+          message:
+            "Compte créé avec succès ! Vous pouvez maintenant vous connecter.",
+        },
+      });
+    } catch (err) {
+      console.error("Erreur d'inscription:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue lors de l'inscription. Veuillez réessayer."
+      );
+      setOpen(true);
+    } finally {
+      setSubmitting(false);
     }
-
-    // Récupération des données de réponse
-    const responseData = await response.json();
-    console.log("Inscription réussie:", responseData);
-
-    // Redirection après inscription réussie
-    navigate("/auth/signin", {
-      state: {
-        message: "Compte créé avec succès ! Vous pouvez maintenant vous connecter.",
-      },
-    });
-  } catch (err) {
-    console.error("Erreur d'inscription:", err);
-    setError(
-      err instanceof Error 
-        ? err.message 
-        : "Une erreur est survenue lors de l'inscription. Veuillez réessayer."
-    );
-    setOpen(true);
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
