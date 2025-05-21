@@ -31,7 +31,7 @@ export default function SignIn() {
       console.log('Credentials:', data);
       
       // Redirection après connexion réussie
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       setError('Identifiants incorrects. Veuillez réessayer.');
       setOpen(true);
