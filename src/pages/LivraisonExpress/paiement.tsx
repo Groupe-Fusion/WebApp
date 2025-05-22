@@ -118,7 +118,7 @@ const onSubmit = async (data: PaymentFormData) => {
 
     // Redirection après paiement réussi
     setTimeout(() => {
-      navigate("/", {
+      navigate("/demandes", {
         state: {
           provider: selectedProvider,
           formData: formData,

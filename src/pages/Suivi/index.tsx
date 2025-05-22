@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   MapContainer,
   TileLayer,
@@ -48,6 +48,33 @@ const dropoffIcon = new L.Icon({
   popupAnchor: [0, -32],
 });
 
+// Interface pour la réponse de l'API
+interface ReservationResponse {
+  reservationId: number;
+  name: string;
+  description: string;
+  userId: number;
+  prestataireId: number | null;
+  startLocation: string;
+  endLocation: string;
+  packageType: string;
+  dimension: string;
+  weight: number;
+  isFragile: boolean;
+  isNow: boolean;
+  deliveryDate: string;
+  category: string;
+  reservationStatus: string;
+  rating: number;
+  price: number;
+  inHour: number;
+  recipientName: string;
+  recipientPhone: string;
+  recipientAddress: string;
+  recipientCity: string;
+  recipientPostalCode: string;
+}
+
 // Interface pour la livraison
 interface DeliveryTracking {
   id: string;
@@ -89,8 +116,51 @@ interface DeliveryTracking {
   }>;
 }
 
+// Fonction pour géocoder une adresse (simulation)
+const geocodeAddress = async (
+  address: string
+): Promise<{ lat: number; lng: number }> => {
+  // Dans une application réelle, vous utiliseriez un service de géocodage comme Google Maps ou Nominatim
+  // Pour cette simulation, nous retournons des coordonnées aléatoires autour de Paris
+  const rouenLat = 49.4432;
+  const rouenLng = 1.0999;
+
+  // Générer des coordonnées proches de Paris
+  const randomOffset = (Math.random() - 0.5) * 0.1; // ±0.05 degré
+  return {
+    lat: rouenLat + randomOffset,
+    lng: rouenLng + randomOffset,
+  };
+};
+
+// Générer un itinéraire entre deux points (simulation)
+const generateRoute = (
+  start: { lat: number; lng: number },
+  end: { lat: number; lng: number }
+) => {
+  const points = 5; // Nombre de points intermédiaires
+  const route = [];
+
+  for (let i = 0; i <= points; i++) {
+    const ratio = i / points;
+    const lat = start.lat + (end.lat - start.lat) * ratio;
+    const lng = start.lng + (end.lng - start.lng) * ratio;
+
+    // Ajouter un peu de variation pour que la route ne soit pas une ligne droite
+    const variation = i > 0 && i < points ? (Math.random() - 0.5) * 0.01 : 0;
+
+    route.push({
+      lat: lat + variation,
+      lng: lng + variation,
+    });
+  }
+
+  return route;
+};
+
 export default function Suivi() {
-  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const reservationId = location.state?.reservationId;
   const [tracking, setTracking] = useState<DeliveryTracking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,50 +218,68 @@ export default function Suivi() {
     return () => clearInterval(interval);
   }, [tracking]);
 
-  // Récupération des données de suivi
+  // Récupération des données de suivi depuis l'API
   useEffect(() => {
     const fetchTrackingData = async () => {
+      if (!reservationId) {
+        setError("Identifiant de réservation manquant");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
-        // Simuler un appel API avec délai
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Appel à l'API réelle
+        const response = await fetch(
+          `http://57.128.212.12:8082/api/reservations/${reservationId}`
+        );
 
-        // Données mockées pour la démonstration
-        const mockData: DeliveryTracking = {
-          id: id || "DR001",
-          reference: "DEL-2023-001",
-          status: "pickup",
-          estimatedDeliveryTime: new Date(Date.now() + 45 * 60 * 1000), // +45 min
-          currentLocation: {
-            lat: 48.8534,
-            lng: 2.3488,
-          },
+        if (!response.ok) {
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+
+        const reservationData: ReservationResponse = await response.json();
+        console.log("Données de réservation:", reservationData);
+
+        // Géocoder les adresses pour obtenir les coordonnées
+        const pickupCoords = await geocodeAddress(
+          reservationData.startLocation
+        );
+        const dropoffCoords = await geocodeAddress(reservationData.endLocation);
+
+        // Générer un itinéraire
+        const route = generateRoute(pickupCoords, dropoffCoords);
+
+        // Position actuelle du livreur (au début de l'itinéraire pour commencer)
+        const currentPosition = { ...pickupCoords };
+
+        // Créer un objet de suivi à partir des données de l'API
+        const trackingData: DeliveryTracking = {
+          id: reservationData.reservationId.toString(),
+          reference: `DEL-${reservationData.reservationId}`,
+          status: "pickup", // État initial
+          estimatedDeliveryTime: new Date(reservationData.deliveryDate),
+          currentLocation: currentPosition,
           pickupLocation: {
-            address: "15 Rue de Rivoli, 75001 Paris",
-            lat: 48.8534,
-            lng: 2.3488,
+            address: reservationData.startLocation,
+            lat: pickupCoords.lat,
+            lng: pickupCoords.lng,
           },
           dropoffLocation: {
-            address: "1 Avenue des Champs-Élysées, 75008 Paris",
-            lat: 48.8698,
-            lng: 2.3075,
+            address: reservationData.endLocation,
+            lat: dropoffCoords.lat,
+            lng: dropoffCoords.lng,
           },
-          route: [
-            { lat: 48.8534, lng: 2.3488 },
-            { lat: 48.8565, lng: 2.345 },
-            { lat: 48.861, lng: 2.336 },
-            { lat: 48.865, lng: 2.327 },
-            { lat: 48.8698, lng: 2.3075 },
-          ],
+          route: route,
           courier: {
-            name: "Thomas Martin",
+            name: "Thomas Martin", // Données simulées pour le coursier
             phone: "06 12 34 56 78",
             photoUrl: "/avatars/courier.jpg",
           },
           recipient: {
-            name: "Marie Dubois",
-            phone: "07 98 76 54 32",
-            address: "1 Avenue des Champs-Élysées, 75008 Paris",
+            name: reservationData.recipientName,
+            phone: reservationData.recipientPhone,
+            address: `${reservationData.recipientAddress}, ${reservationData.recipientPostalCode} ${reservationData.recipientCity}`,
           },
           statusUpdates: [
             {
@@ -213,14 +301,16 @@ export default function Suivi() {
           ],
         };
 
-        setTracking(mockData);
+        setTracking(trackingData);
       } catch (err) {
         console.error(
           "Erreur lors de la récupération des données de suivi:",
           err
         );
         setError(
-          "Impossible de récupérer les informations de suivi. Veuillez réessayer plus tard."
+          err instanceof Error
+            ? err.message
+            : "Impossible de récupérer les informations de suivi. Veuillez réessayer plus tard."
         );
       } finally {
         setLoading(false);
@@ -228,7 +318,7 @@ export default function Suivi() {
     };
 
     fetchTrackingData();
-  }, [id]);
+  }, [reservationId]);
 
   // Statut de la livraison en français
   const getStatusLabel = (status: string): string => {
@@ -343,7 +433,7 @@ export default function Suivi() {
       {/* Disposition verticale avec carte en haut et informations en dessous */}
       <div className="flex flex-col space-y-8">
         {/* Carte de suivi - occupe toute la largeur */}
-        <div className="bg-white shadow rounded-lg overflow-hidden h-[500px]">
+        <div className="bg-white shadow rounded-lg overflow-hidden h-[500px] z-10">
           <MapContainer
             center={[
               (tracking.pickupLocation.lat + tracking.dropoffLocation.lat) / 2,

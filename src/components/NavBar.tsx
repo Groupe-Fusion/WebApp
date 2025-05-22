@@ -27,7 +27,7 @@ export function Navbar() {
       active: true,
     },
     {
-      href: "/requests",
+      href: "/demandes",
       icon: "/document-signe-1.png",
       alt: "Document signe",
       label: "Mes demandes",

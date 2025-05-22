@@ -72,7 +72,32 @@ export default function LivraisonExpressResultats() {
     setSubmitting(true);
 
     try {
-      // Appel à l'API pour mettre à jour la réservation avec l'ID du prestataire
+      // 1. D'abord récupérer les données actuelles de la réservation
+      const getResponse = await fetch(
+        `http://57.128.212.12:8082/api/reservations/${reservationId}`
+      );
+
+      if (!getResponse.ok) {
+        throw new Error(
+          `Erreur lors de la récupération de la réservation: ${getResponse.status}`
+        );
+      }
+
+      // 2. Obtenir les données actuelles
+      const reservationData = await getResponse.json();
+      console.log("Réservation existante:", reservationData);
+
+      // 3. Mettre à jour uniquement le champ prestataireId
+      const updatedData = {
+        ...reservationData,
+        prestataireId: provider.id,
+        // // Mettre à jour le statut si nécessaire
+        // reservationStatus: "pending", // Ou un autre statut approprié
+        // // Mettre à jour le prix depuis le prestataire si nécessaire
+        // price: provider.price,
+      };
+
+      // 4. Envoyer la réservation complète mise à jour
       const response = await fetch(
         `http://57.128.212.12:8082/api/reservations/${reservationId}`,
         {
@@ -80,9 +105,7 @@ export default function LivraisonExpressResultats() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            prestataireId: provider.id,
-          }),
+          body: JSON.stringify(updatedData),
         }
       );
 
