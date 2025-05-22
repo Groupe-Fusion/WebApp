@@ -46,20 +46,70 @@ export default function LivraisonExpressResultats() {
   const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [allProviders, setAllProviders] = useState<DeliveryProvider[]>([]);
   const [filteredProviders, setFilteredProviders] = useState<
     DeliveryProvider[]
   >([]);
   const formData = location.state?.formData as FormData | undefined;
+  const reservationId = location.state?.reservationId as string | undefined;
+
+  console.log("FormData:", formData);
+  console.log("Reservation ID:", reservationId);
 
   // Fonction pour sélectionner un prestataire et rediriger vers le paiement
-  const handleSelectProvider = (provider: DeliveryProvider) => {
-    navigate("/livraison-express/paiement", {
-      state: {
-        provider: provider,
-        formData: formData,
-      },
-    });
+  const handleSelectProvider = async (provider: DeliveryProvider) => {
+    // Vérifier si on a un ID de réservation
+    if (!reservationId) {
+      console.error("ID de réservation manquant");
+      setError(
+        "Impossible de mettre à jour la réservation: identifiant manquant"
+      );
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Appel à l'API pour mettre à jour la réservation avec l'ID du prestataire
+      const response = await fetch(
+        `http://57.128.212.12:8082/api/reservations/${reservationId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prestataireId: provider.id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message ||
+            "Erreur lors de la mise à jour de la réservation"
+        );
+      }
+
+      // Redirection vers la page de paiement avec les infos du prestataire
+      navigate("/livraison-express/paiement", {
+        state: {
+          provider: provider,
+          formData: formData,
+          reservationId: reservationId,
+        },
+      });
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la réservation:", error);
+      setError(
+        error instanceof Error ? error.message : "Une erreur est survenue"
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // États de filtrage et de tri
