@@ -1,0 +1,33 @@
+name: Deploy to Server
+
+on:
+   push:
+      branches:
+         - main
+
+jobs:
+   deploy:
+      runs-on: ubuntu-latest
+
+      steps:
+         - name: Deploy on Server
+           uses: appleboy/ssh-action@master
+           with:
+              host: ${{ secrets.SSH_HOST }}
+              username: ${{ secrets.SSH_USER }}
+              key: ${{ secrets.SSH_PRIVATE_KEY }}
+              script: |
+                 cd /home/nfs/micro-service/quick-serve/front_web
+
+                 echo "Pulling latest code..."
+                 git pull
+
+                 echo "Stoppin  g existing Docker container..."
+                 docker stop front_web_container || true
+                 docker rm front_web_container || true
+
+                 echo "Building Docker image..."
+                 docker build -t front_web_image .
+
+                 echo "Running Docker container..."
+                 docker run -d --name front_web_container -p 3000:80 front_web_image
