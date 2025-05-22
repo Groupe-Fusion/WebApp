@@ -6,6 +6,8 @@ import * as Select from "@radix-ui/react-select";
 import * as Toast from "@radix-ui/react-toast";
 import { CheckIcon, ChevronDownIcon, Cross2Icon } from "@radix-ui/react-icons";
 import { FormFieldset } from "../../components/form/FormFieldSet";
+import { useUser } from "../../context/UserContext";
+import { useLocation } from "../../context/LocationContext";
 
 // Type pour les données du formulaire
 type FormData = {
@@ -26,6 +28,9 @@ export function LivraisonExpressForm() {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"success" | "error" | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const { user } = useUser();
+  const { userLocation } = useLocation();
 
   const {
     register,
@@ -43,9 +48,49 @@ export function LivraisonExpressForm() {
     setSubmitting(true);
 
     try {
-      // Simulation d'un appel API
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("Données soumises:", data);
+      // Vérifier si l'utilisateur est connecté
+      if (!user || !user.id) {
+        throw new Error("Vous devez être connecté pour effectuer cette action");
+      }
+
+      // Adapter les données pour l'API
+      const apiData = {
+        name: "Livraison Express",
+        userId: user.id,
+        startLocation: userLocation || "Adresse de départ non spécifiée",
+        endLocation: data.receiverAddress,
+        dimension: data.dimensions || "Non spécifié",
+        weight: parseFloat(data.weight),
+        recipientName: data.receiverName,
+        recipientPhone: data.receiverPhone,
+        recipientAddress: data.receiverAddress,
+        recipientCity: data.receiverCity,
+        recipientPostalCode: data.receiverPostalCode,
+        packageType: data.packageType,
+        isFragile: data.fragile,
+      };
+
+      // Appel à l'API
+      const response = await fetch(
+        "http://57.128.212.12:8082/api/reservations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(apiData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message || "Erreur lors de l'envoi de la demande"
+        );
+      }
+
+      const responseData = await response.json();
+      console.log("Réponse API:", responseData);
 
       setStatus("success");
       setOpen(true);
@@ -53,11 +98,19 @@ export function LivraisonExpressForm() {
       // Après un court délai pour que l'utilisateur voit le message de succès
       setTimeout(() => {
         // Redirection vers la page des résultats avec les données du formulaire
-        navigate("/livraison-express/resultats", { state: { formData: data } });
+        navigate("/livraison-express/resultats", {
+          state: {
+            formData: data,
+            reservationId: responseData.reservationId,
+          },
+        });
       }, 2000);
     } catch (error) {
       console.error("Erreur:", error);
       setStatus("error");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Une erreur s'est produite"
+      );
       setOpen(true);
     } finally {
       setSubmitting(false);

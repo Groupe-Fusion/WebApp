@@ -46,6 +46,7 @@ export default function LivraisonExpressPaiement() {
     | DeliveryProvider
     | undefined;
   const formData = location.state?.formData;
+  const reservationId = location.state?.reservationId;
 
   // S'il n'y a pas de prestataire sélectionné, rediriger vers la page des résultats
   if (!selectedProvider && !submitting) {
@@ -68,38 +69,71 @@ export default function LivraisonExpressPaiement() {
   const serviceFee = 1.99;
   const total = deliveryPrice + serviceFee;
 
-  const onSubmit = async (data: PaymentFormData) => {
-    setSubmitting(true);
-    try {
-      // Simulation d'un appel API pour le paiement
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      console.log("Paiement effectué:", {
-        provider: selectedProvider,
-        paymentDetails: data,
-        amount: total,
-      });
-
-      setStatus("success");
-      setOpen(true);
-
-      // Redirection après paiement réussi
-      setTimeout(() => {
-        navigate("/livraison-express/confirmation", {
-          state: {
-            provider: selectedProvider,
-            formData: formData,
-            total: total,
-          },
-        });
-      }, 2000);
-    } catch (error) {
-      console.error("Erreur de paiement:", error);
-      setStatus("error");
-      setOpen(true);
-      setSubmitting(false);
+const onSubmit = async (data: PaymentFormData) => {
+  setSubmitting(true);
+  try {    
+    if (!reservationId) {
+      throw new Error("ID de réservation manquant");
     }
-  };
+
+    // Préparation des données pour l'API de paiement
+    const paymentData = {
+      reservationId: reservationId,
+      deliveryPrice: deliveryPrice,
+      servicePrice: serviceFee,
+      totalPrice: total,
+      cardOwner: data.cardholderName,
+      cardNumber: data.cardNumber,
+      cardCvc: data.cvv,
+      cardExpiry: data.expiryDate,
+      isSavedForFutureUse: true, // On force à true comme demandé
+      facturationAddress: data.billingAddress,
+      facturationCity: data.billingCity,
+      facturationPostalCode: data.billingPostalCode,
+      facturationCountry: data.billingCountry,
+      isPaid: true // La transaction est considérée comme réussie
+    };
+
+    // Appel à l'API de paiement
+    const response = await fetch("http://57.128.212.12:8079/payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(paymentData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || "Erreur lors du traitement du paiement");
+    }
+
+    // Récupération de la réponse
+    const responseData = await response.json();
+    console.log("Paiement effectué:", responseData);
+
+    // Affichage du toast de succès
+    setStatus("success");
+    setOpen(true);
+
+    // Redirection après paiement réussi
+    setTimeout(() => {
+      navigate("/", {
+        state: {
+          provider: selectedProvider,
+          formData: formData,
+          total: total,
+          paymentId: responseData.id // On transmet l'ID du paiement
+        },
+      });
+    }, 2000);
+  } catch (error) {
+    console.error("Erreur de paiement:", error);
+    setStatus("error");
+    setOpen(true);
+    setSubmitting(false);
+  }
+};
 
   return (
     <div className="w-full max-w-[1200px] relative min-h-screen">
